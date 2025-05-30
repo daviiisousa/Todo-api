@@ -2,14 +2,15 @@ const expres = require("express");
 const { Pool } = require("pg");
 const app = expres();
 const port = 3001;
+require("dotenv").config();
 const cors = require("cors");
 
 const pool = new Pool({
-  user: "postgres.ukxvuywbzkjlxgufpqef",
-  host: "aws-0-sa-east-1.pooler.supabase.com",
-  password: "2710",
-  port: 5432,
-  database: "postgres",
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  password: process.env.DB_PASS,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
 });
 
 const allowedOrigins = [
