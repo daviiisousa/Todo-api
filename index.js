@@ -13,26 +13,9 @@ const pool = new Pool({
   database: process.env.DB_NAME,
 });
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "http://localhost:3001",
-  "https://todo-tarefa.vercel.app",
-];
-
 app.use(expres.json());
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-  })
-);
+app.use(cors());
 
 app.get("/todos", async (_req, res) => {
   try {
@@ -90,7 +73,7 @@ app.delete("/todos/:id", async (req, res) => {
   }
 });
 
-app.put("/todos/:id", async (req, res) => {
+app.patch("/todos/:id", async (req, res) => {
   const { id } = req.params;
   const { descricao } = req.body;
   try {
@@ -106,6 +89,22 @@ app.put("/todos/:id", async (req, res) => {
     );
 
     return res.status(201).send(todo.rows[0]);
+  } catch (error) {
+    return res.status(500).send("erro no servidor: ", error);
+  }
+});
+
+app.patch("todos/:id", async (req, res) => {
+  const { id } = req.params;
+  const { concluido } = req.body;
+  try {
+    await pool.query(
+      `
+        UPDATE todos SET concluido = $1 WHERE id = $2
+      `,
+      [concluido, id]
+    );
+    return res.status(201).send("tarefa concluida");
   } catch (error) {
     return res.status(500).send("erro no servidor: ", error);
   }
