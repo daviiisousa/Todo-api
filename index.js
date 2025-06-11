@@ -19,9 +19,13 @@ app.use(cors());
 
 app.get("/todos", async (_req, res) => {
   try {
-    const todo = await pool.query("SELECT * FROM todos");
-    res.send(todo.rows);
+    const todos = await pool.query("SELECT * FROM todos");
+    if (!todos) {
+      res.status(404).send("erro ao buscar tarefas");
+    }
+    res.send(todos.rows);
   } catch (error) {
+    console.error("Erro ao buscar tarefa:", error);
     return res.status(500).send("erro no servidor: ", error);
   }
 });
@@ -30,12 +34,14 @@ app.post("/todos", async (req, res) => {
   try {
     const { titulo, descricao } = req.body;
 
-    if ((!titulo, !descricao)) {
+    if (!titulo || !descricao) {
       return res.status(400).send("Preencha todos os dados corretamente");
     }
+
     if (descricao.length > 100) {
       return res.status(400).send("a descricao tem mais de 100 caracteres");
     }
+
     const todo = await pool.query(
       `
         INSERT INTO todos (titulo, descricao)
@@ -50,7 +56,7 @@ app.post("/todos", async (req, res) => {
 
     return res.status(201).send(todo.rows[0]);
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao criar tarefa: ", error);
     return res.status(500).send("erro no servidor: ", error);
   }
 });
@@ -73,7 +79,7 @@ app.delete("/todos/:id", async (req, res) => {
   }
 });
 
-app.patch("/todos/:id", async (req, res) => {
+app.patch("/todos/:id/descricao", async (req, res) => {
   const { id } = req.params;
   const { descricao } = req.body;
   try {
@@ -88,15 +94,19 @@ app.patch("/todos/:id", async (req, res) => {
       [descricao, id]
     );
 
-    return res.status(201).send(todo.rows[0]);
+    return res.status(200).send(todo.rows[0]);
   } catch (error) {
+    console.error("Erro ao editar descricao tarefa:", error);
     return res.status(500).send("erro no servidor: ", error);
   }
 });
 
-app.patch("todos/:id", async (req, res) => {
+app.patch("/todos/:id/concluido", async (req, res) => {
   const { id } = req.params;
   const { concluido } = req.body;
+  if (typeof concluido !== "boolean") {
+    return res.status(400).send("o concluido deve ser verdadeiro ou false");
+  }
   try {
     await pool.query(
       `
@@ -106,6 +116,7 @@ app.patch("todos/:id", async (req, res) => {
     );
     return res.status(201).send("tarefa concluida");
   } catch (error) {
+    console.error("Erro ao editar concluido tarefa:", error);
     return res.status(500).send("erro no servidor: ", error);
   }
 });
